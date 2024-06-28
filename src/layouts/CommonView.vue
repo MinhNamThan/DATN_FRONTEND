@@ -3,8 +3,8 @@
     <a-layout-header :style="{ height: '64px' }">
       <PageHeader />
     </a-layout-header>
-    <a-layout-content :style="{ minHeight: '80%' }">
-      <div :style="{ background: '#fff', padding: '24px 0px', height: '100%' }">
+    <a-layout-content class="layout-content">
+      <div class="content">
         <router-view />
       </div>
     </a-layout-content>
@@ -16,16 +16,29 @@
 
 <script lang="ts" setup>
 import { PageFooter, PageHeader } from "./index";
-// import { useNotificationStore } from "@/store";
+import { useBoxStore } from "@/store";
 
+const boxStore = useBoxStore();
+boxStore.fetchBoxList();
 </script>
 
 <style scope>
 .layout {
-  height: 100vh;
+  min-height: 100vh;
 }
 
 [data-theme="dark"] .site-layout-content {
   background: #141414;
+}
+
+.layout-content {
+  min-height: 80%;
+  background-image: url("../assets/bg.jpg");
+  background-size: 100%;
+}
+.content {
+  padding: 24px 0px;
+  min-height: 100vh;
+  height: 100%;
 }
 </style>

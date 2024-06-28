@@ -22,8 +22,15 @@
                 ) in notificationStore.notificationList"
                 class="dropdown-select-item"
                 :key="notification.id"
+                @click="showDetail(notification.id)"
               >
-                {{ notification.title }}
+                <h3>{{ notification.title }}</h3>
+                <p>
+                  {{
+                    "Thời gian: " +
+                    dayjs(notification.created_at).format("DD/MM/YYYY HH:mm:ss")
+                  }}
+                </p>
                 <a-divider
                   v-if="index != notificationStore.notificationList.length - 1"
                   style="margin: 4px 0"
@@ -64,6 +71,7 @@ import { notification } from "ant-design-vue";
 import { useNotificationStore } from "@/store";
 import { LogoutOutlined } from "@ant-design/icons-vue";
 import { useRouter } from "vue-router";
+import dayjs from "dayjs";
 
 const router = useRouter();
 
@@ -141,6 +149,9 @@ function reloadWeb() {
   router.push("/").then(() => {
     window.location.reload();
   });
+}
+function showDetail(id: number) {
+  router.push(`/notification/${id}`);
 }
 </script>
 

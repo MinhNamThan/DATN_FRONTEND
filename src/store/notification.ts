@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import http from "./http";
 import { Response } from "@/types";
+import { Camera } from "./camera";
 
 export interface Notification {
   id: number;
@@ -8,6 +9,15 @@ export interface Notification {
   description: string;
   videoUrl: string;
   status: string;
+  created_at: string;
+  camera: Camera;
+}
+
+export interface PaginationNotification {
+  items: Notification[];
+  page: number;
+  size: number;
+  total: number;
 }
 
 export const useNotificationStore = defineStore("notification", {
@@ -15,18 +25,41 @@ export const useNotificationStore = defineStore("notification", {
     return {
       notificationList: [] as Notification[],
       notificationCur: {} as Notification,
+      total: 0,
     };
   },
   actions: {
-    async fetchNotificationList() {
+    async fetchNotificationList(page = 1, size = 6, camera_id = 0, start_date: undefined|string = undefined, end_date: undefined|string = undefined) {
       return http
-        .request<Notification, Response<Notification[]>>(
+        .request<PaginationNotification, Response<PaginationNotification>>(
           "/notifications",
-          "GET"
+          "GET",
+          {
+            page,
+            size,
+            camera_id,
+            start_date,
+            end_date
+          }
         )
         .then((res) => {
           if (res.code === 200) {
-            this.notificationList = res.data;
+            this.notificationList = res.data.items;
+            this.total = res.data.total;
+            return res.data;
+          }
+          return Promise.reject(res);
+        });
+    },
+    async fetchNotificationById(id: string) {
+      return http
+        .request<Notification, Response<Notification>>(
+          "/notifications/" + id,
+          "GET",
+        )
+        .then((res) => {
+          if (res.code === 200) {
+            this.notificationCur = res.data;
             return res.data;
           }
           return Promise.reject(res);
@@ -57,7 +90,10 @@ export const useNotificationStore = defineStore("notification", {
     // },
     async updateStatus() {
       return http
-        .request<Notification, Response<Notification>>("/notifications", "put_json")
+        .request<Notification, Response<Notification>>(
+          "/notifications",
+          "put_json"
+        )
         .then(async (response) => {
           if (response.code === 202) {
             return response.data;

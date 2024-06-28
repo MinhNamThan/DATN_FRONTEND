@@ -16,10 +16,10 @@
         >
           <a-form-item
             label="Name"
-            name="name"
+            name="fullName"
             :rules="[{ required: true, message: 'Please input your name!' }]"
           >
-            <a-input v-model:value="form.name">
+            <a-input v-model:value="form.fullName">
               <template #prefix>
                 <UserOutlined class="site-form-item-icon" />
               </template>
@@ -52,9 +52,17 @@
             </a-input-password>
           </a-form-item>
 
-          <!-- <a-form-item :wrapper-col="{ offset: 0, span: 24 }">
-            <a-button type="primary" @click="register">Tạo tài khoản</a-button>
-          </a-form-item> -->
+          <a-form-item
+            label="Phone"
+            name="phoneNumber"
+            :rules="[{ required: true, message: 'Please input your phoneNumber!' }]"
+          >
+            <a-input v-model:value="form.phoneNumber">
+              <template #prefix>
+                <UserOutlined class="site-form-item-icon" />
+              </template>
+            </a-input>
+          </a-form-item>
           <a-button
             htmlType="submit"
             class="h-[40px] w-full"
@@ -83,17 +91,19 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 export interface RegisterFormProps {
-  name: string;
+  fullName: string;
   email: string;
   password: string;
+  phoneNumber: string;
 }
 
 const loading = ref(false);
 
 const form = reactive({
-  name: undefined,
+  fullName: undefined,
   email: undefined,
   password: undefined,
+  phoneNumber: undefined,
 });
 
 const accountStore = useAccountStore();
@@ -101,13 +111,12 @@ function register(params: RegisterFormProps) {
   loading.value = true;
 
   accountStore
-    .register(params.name, params.email, params.password)
+    .register(params.fullName, params.email, params.password, params.phoneNumber)
     .then(() => {
       notification.success({
-        message: "Đã gửi mã đến email",
+        message: "Đăng ký thành công",
       });
-      localStorage.setItem("emailCur", params.email);
-      router.push("/verify");
+      router.push("/login");
     })
     .catch((e) => {
       if (e.data?.detail == "Email is already exists.") {
@@ -152,6 +161,7 @@ function register(params: RegisterFormProps) {
 .common-layout {
   .top {
     text-align: center;
+    margin-top: 10%;
     .header {
       height: 44px;
       line-height: 44px;

@@ -1,31 +1,40 @@
 import { defineStore } from "pinia";
 import http from "./http";
 import { Response } from "@/types";
-import { BoxInfo } from "./box";
+import { PLace } from "./place";
 
-export interface Camera {
+export interface Box {
   id: number;
   name: string;
-  url: string;
-  box: BoxInfo;
-  detected: boolean;
-  points: string;
+  link: string;
+  username: string;
+  password: string;
+  place_id: number
 }
 
-export const useCameraStore = defineStore("camera", {
+export interface BoxInfo {
+  id: number;
+  name: string;
+  link: string;
+  username: string;
+  password: string;
+  place: PLace
+}
+
+export const useBoxStore = defineStore("box", {
   state() {
     return {
-      cameraList: [] as Camera[],
-      cameraCur: {} as Camera,
+      boxList: [] as Box[],
+      boxCur: {} as Box,
     };
   },
   actions: {
-    async fetchCameraList() {
+    async fetchBoxList() {
       return http
-        .request<Camera, Response<Camera[]>>("/camera", "GET")
+        .request<Box, Response<Box[]>>("/box", "GET")
         .then((res) => {
           if (res.code === 200) {
-            this.cameraList = res.data.sort((a, b) =>
+            this.boxList = res.data.sort((a, b) =>
               a.name.localeCompare(b.name)
             );
             return res.data;
@@ -46,14 +55,14 @@ export const useCameraStore = defineStore("camera", {
     //       return Promise.reject(res);
     //     });
     // },
-    async saveCamera(box_id: number, name: string, url: string, detected: boolean, points: string) {
+    async saveBox(place_id: number, name: string, link: string, username: string, password: string) {
       return http
-        .request<Camera, Response<Camera>>("/camera", "post_json", {
-          box_id,
+        .request<Box, Response<Box>>("/box", "post_json", {
+          place_id,
           name,
-          url,
-          detected,
-          points
+          link,
+          username,
+          password,
         })
         .then(async (response) => {
           if (response.code === 201) {
@@ -62,24 +71,24 @@ export const useCameraStore = defineStore("camera", {
           return Promise.reject(response);
         });
     },
-    async updateCamera(id: number, name: string, url: string, detected: boolean, points: string) {
+    async updateBox(id: number, name: string, link: string, username: string, password: string) {
       return http
-        .request<Camera, Response<Camera>>("/camera/" + id, "put_json", {
+        .request<Box, Response<Box>>("/box/" + id, "put_json", {
           name,
-          url,
-          detected,
-          points
+          link,
+          username,
+          password,
         })
         .then(async (response) => {
           if (response.code === 202) {
-            return response;
+            return response.data;
           }
           return Promise.reject(response);
         });
     },
-    async deleteCamera(id: number) {
+    async deleteBox(id: number) {
       return http
-        .request<Camera, Response<Camera>>("/camera/" + id, "DELETE", {})
+        .request<Box, Response<Box>>("/box/" + id, "DELETE", {})
         .then(async (response) => {
           if (response.code === 204) {
             return response.data;

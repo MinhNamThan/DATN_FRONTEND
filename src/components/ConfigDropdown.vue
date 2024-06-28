@@ -9,6 +9,13 @@
           </div>
         </router-link>
         <a-divider style="margin: 4px 0" />
+        <router-link to="/box">
+          <div class="dropdown-select-item">
+            <setting-outlined class="mr-1" />
+            Thiết bị
+          </div>
+        </router-link>
+        <a-divider style="margin: 4px 0" />
         <router-link to="/camera">
           <div class="dropdown-select-item">
             <setting-outlined class="mr-1" />

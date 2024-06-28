@@ -1,24 +1,52 @@
 <template>
   <div class="camera">
-    <h1 class="float-left">Thiết lập Camera</h1>
-    <div class="mb-1 d-flex justify-content-end">
-      <a-button type="primary" @click="showModalAdd">
-        Thêm địa camera
-      </a-button>
+    <div>
+      <a-page-header @back="() => null">
+        <template #title>
+          <h2>
+            {{
+              Object.keys(CameraCurrent).length === 0
+                ? "Thiết lập Camera"
+                : "Chi tiết Camera"
+            }}
+          </h2>
+        </template>
+        <template #backIcon>
+          <a-button v-if="Object.keys(CameraCurrent).length !== 0">
+            <template #icon>
+              <ArrowLeftOutlined />
+            </template>
+          </a-button>
+        </template>
+        <template #extra>
+          <a-button
+            v-if="Object.keys(CameraCurrent).length === 0"
+            type="primary"
+            @click="showModalAdd"
+            size="large"
+          >
+            Thêm camera
+          </a-button>
+        </template>
+      </a-page-header>
     </div>
 
-    <a-row :gutter="8">
+    <CameraDetail
+      :CameraCurrent="CameraCurrent"
+      v-if="Object.keys(CameraCurrent).length > 0"
+      @success="onUpdatePointsSuccess"
+    />
+    <a-row :gutter="8" v-else>
       <a-col
         v-for="camera in cameraStore.cameraList"
-        :key="camera.id"
+        :key="`${camera.id}-${reloadTimestamp[camera.id]}`"
         :span="11"
-        :offset="1"
-        class="mb-2"
+        class="mb-2 mx-4"
       >
         <a-card hoverable>
           <template #title>
             <div class="d-flex justify-content-end">
-              <p class="mb-0 mr-3">{{ camera.name }}</p>
+              <p class="mb-0 mr-3" @click="getCam(camera)">{{ camera.name }}</p>
               <a-popover class="mt-1">
                 <template #content> Chỉnh sửa </template>
                 <SettingOutlined @click="openEditModal(camera)" />
@@ -26,24 +54,18 @@
             </div>
           </template>
           <template #cover>
-            <a-spin v-if="imageLoading[camera.id]" size="large" />
             <img
-              v-else
-              :src="`http://0.0.0.0:8001/?url=${camera.url}`"
+              :src="`${camera.box.link}?url=${camera.url}&username=${camera.box.username}&password=${camera.box.password}`"
               alt=""
               width="100%"
               class="img-camera"
               @load="handleImageLoad(camera.id)"
             />
+            <a-spin v-if="imageLoading[camera.id]" size="large" />
           </template>
         </a-card>
       </a-col>
     </a-row>
-
-    <!-- <img :src="`http://0.0.0.0:8001/?url=${testUrl}`" alt="test" width="600px" /> -->
-    <!-- <video width="320" height="240" autoplay>
-      <source src="rtsp://admin:JCNMJQ@namthan.ddns.net:554" type="video/mp4" />
-    </video> -->
 
     <a-modal v-model:open="visibleModalAdd" title="Thêm camera">
       <template #footer>
@@ -90,24 +112,28 @@
         </a-form-item>
 
         <a-form-item
-          label="Place"
-          name="place_id"
+          label="Box"
+          name="box_id"
           :rules="[
             { required: true, message: 'Please choise your place camera!' },
           ]"
         >
           <a-select
-            v-model:value="formAdd.place_id"
+            v-model:value="formAdd.box_id"
             placeholder="please select your place"
           >
             <a-select-option
-              v-for="place in placeStore.placeList"
-              :key="place.id"
-              :value="place.id"
+              v-for="box in boxStore.boxList"
+              :key="box.id"
+              :value="box.id"
             >
-              {{ place.name }}
+              {{ box.name }}
             </a-select-option>
           </a-select>
+        </a-form-item>
+
+        <a-form-item label="Detect" name="detected">
+          <a-checkbox v-model:checked="formAdd.detected"></a-checkbox>
         </a-form-item>
       </a-form>
       <a-divider style="margin: 4px 0" />
@@ -154,6 +180,10 @@
             </template>
           </a-input>
         </a-form-item>
+
+        <a-form-item label="Detect" name="detected">
+          <a-checkbox v-model:checked="formUpdate.detected"></a-checkbox>
+        </a-form-item>
       </a-form>
       <a-divider style="margin: 4px 0" />
     </a-modal>
@@ -161,56 +191,70 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { reactive, ref, onMounted } from "vue";
 import {
   UserOutlined,
   LockOutlined,
   SettingOutlined,
+  ArrowLeftOutlined,
 } from "@ant-design/icons-vue";
+import CameraDetail from "./CameraDetail/CameraDetail.vue";
 import { notification } from "ant-design-vue";
-import { useCameraStore, Camera, usePlaceStore } from "@/store";
+import { useCameraStore, Camera, useBoxStore } from "@/store";
+import axios from "axios";
 const loading = ref(false);
 const visibleModalAdd = ref(false);
 const visibleModalUpdate = ref(false);
-const token = localStorage.getItem("Authorization");
-console.log(token);
+const CameraCurrent = ref<Camera | {}>({});
+const reloadTimestamp = reactive<Record<number, number>>({});
+
 const imageLoading = reactive<Record<number, boolean>>({});
 export interface CameraFormProps {
-  place_id: number | undefined;
+  box_id: number | undefined;
   name: string | undefined;
   url: string | undefined;
+  detected: boolean | undefined;
 }
 
 export interface CameraFormUpdateProps {
-  place_id: number | undefined;
+  box_id: number | undefined;
   name: string | undefined;
   url: string | undefined;
   id: number | undefined;
+  detected: boolean | undefined;
 }
 
 const formAdd = reactive<CameraFormProps>({
-  place_id: undefined,
+  box_id: undefined,
   name: undefined,
   url: undefined,
+  detected: false,
 });
 
 const formUpdate = reactive<CameraFormUpdateProps>({
-  place_id: undefined,
+  box_id: undefined,
   name: undefined,
   url: undefined,
   id: undefined,
+  detected: false,
 });
 
 const cameraStore = useCameraStore();
-const placeStore = usePlaceStore();
-placeStore.fetchPlaceList();
-cameraStore.fetchCameraList().then(() => setLoading());
+const boxStore = useBoxStore();
+boxStore.fetchBoxList();
 
-function setLoading() {
-  cameraStore.cameraList.forEach((camera) => {
-    console.log(camera);
-    imageLoading[camera.id] = true;
-  });
+
+onMounted(() => {
+  cameraStore.fetchCameraList().then(() => {
+    cameraStore.cameraList.forEach((camera) => {
+      imageLoading[camera.id as number] = true;
+      reloadTimestamp[camera.id as number] = Date.now();
+    });
+  })
+});
+
+function handleImageLoad(id: number) {
+  imageLoading[id] = false;
 }
 
 function handleCancel() {
@@ -225,9 +269,11 @@ function onSave() {
 
   cameraStore
     .saveCamera(
-      formAdd.place_id as unknown as number,
+      formAdd.box_id as unknown as number,
       formAdd.name as unknown as string,
-      formAdd.url as unknown as string
+      formAdd.url as unknown as string,
+      formAdd.detected as unknown as boolean,
+      JSON.stringify([])
     )
     .then(() => {
       notification.success({
@@ -235,9 +281,10 @@ function onSave() {
       });
       cameraStore.fetchCameraList();
       visibleModalAdd.value = false;
-      formAdd.place_id = undefined;
+      formAdd.box_id = undefined;
       formAdd.name = undefined;
       formAdd.url = undefined;
+      formAdd.detected = false;
     })
     .catch((e) => {
       notification.error({
@@ -252,7 +299,9 @@ function onUpdate() {
     .updateCamera(
       formUpdate.id as unknown as number,
       formUpdate.name as unknown as string,
-      formUpdate.url as unknown as string
+      formUpdate.url as unknown as string,
+      formUpdate.detected as unknown as boolean,
+      JSON.stringify([])
     )
     .then(() => {
       notification.success({
@@ -260,10 +309,15 @@ function onUpdate() {
       });
       cameraStore.fetchCameraList();
       visibleModalUpdate.value = false;
+      if(formUpdate.id){
+        reloadTimestamp[formUpdate.id as number] = Date.now();
+        console.log(reloadTimestamp[formUpdate.id as number])
+      }
       formUpdate.id = undefined;
-      formUpdate.place_id = undefined;
+      formUpdate.box_id = undefined;
       formUpdate.name = undefined;
       formUpdate.url = undefined;
+      formUpdate.detected = false;
     })
     .catch((e) => {
       notification.error({
@@ -283,9 +337,10 @@ function Ondelete() {
       cameraStore.fetchCameraList();
       visibleModalUpdate.value = false;
       formUpdate.id = undefined;
-      formUpdate.place_id = undefined;
+      formUpdate.box_id = undefined;
       formUpdate.name = undefined;
       formUpdate.url = undefined;
+      formUpdate.detected = false;
     })
     .catch((e) => {
       notification.error({
@@ -298,17 +353,33 @@ function openEditModal(camera: Camera) {
   visibleModalUpdate.value = true;
   formUpdate.name = camera.name;
   formUpdate.url = camera.url;
-  formUpdate.place_id = camera.place_id;
+  formUpdate.box_id = camera.box.id;
   formUpdate.id = camera.id;
+  formUpdate.detected = camera.detected;
 }
 
-function handleImageLoad(id: number) {
-  imageLoading[id] = false;
+async function getCam(camera: Camera) {
+  await axios.get(camera.box.link + "stop_stream?urllink=" + camera.url);
+  CameraCurrent.value = camera;
+}
+function onUpdatePointsSuccess() {
+  if(CameraCurrent.value && 'id' in CameraCurrent.value){
+    reloadTimestamp[CameraCurrent.value.id as number] = Date.now();
+  }
+  CameraCurrent.value = {};
+  cameraStore.fetchCameraList();
+  notification.success({
+    message: "Cập nhật camera thành công",
+  });
 }
 </script>
 
 <style scoped>
 .img-camera {
   border-radius: 10px;
+}
+.camera {
+  padding: 0 50px;
+  font-size: 18px;
 }
 </style>

@@ -32,9 +32,19 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import("@/views/Place/PLaceView.vue"),
       },
       {
+        path: "/box",
+        name: "box",
+        component: () => import("@/views/Box/BoxView.vue"),
+      },
+      {
         path: "/camera",
         name: "camera",
         component: () => import("@/views/Camera/CameraView.vue"),
+      },
+      {
+        path: '/notification/:id',
+        name: 'Notification',
+        component: () => import('@/views/Notification/NotificationView.vue'),
       },
     ],
   },
