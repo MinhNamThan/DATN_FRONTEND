@@ -9,7 +9,7 @@ export interface Profile {
   role: string;
 }
 export interface Account {
-  name: string;
+  fullName: string;
   email: string;
   phoneNumber: string;
   type: string;
@@ -94,12 +94,13 @@ export const useAccountStore = defineStore("account", {
     //       return Promise.reject(response);
     //     });
     // },
-    async register(name: string, email: string, password: string) {
+    async register(fullName: string, email: string, password: string, phoneNumber: string) {
       return http
-        .request<TokenResult, Response<TokenResult>>("/users", "post_json", {
-          name,
+        .request<TokenResult, Response<TokenResult>>("/user", "post_json", {
+          fullName,
           email,
           password,
+          phoneNumber
         })
         .then(async (response) => {
           if (response.code === 201) {
