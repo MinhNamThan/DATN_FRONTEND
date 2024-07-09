@@ -3,7 +3,7 @@
     <div class="d-flex">
       <div style="position: relative; width: fit-content">
         <img
-          :src="`${props.CameraCurrent.box.link}?url=${props.CameraCurrent.url}`"
+          :src="`${props.CameraCurrent.box.link}?url=${props.CameraCurrent.url}&username=${props.CameraCurrent.box.username}&password=${props.CameraCurrent.box.password}`"
           alt="Camera Image"
           width="80%"
           class="img-camera"
@@ -71,6 +71,15 @@ async function prepareCanvas() {
   let image = document.getElementById("img-camera") as HTMLImageElement;
   canvas.width = image.width;
   canvas.height = image.height;
+  const list =
+    JSON.parse(props.CameraCurrent.points).length >= 4
+      ? JSON.parse(props.CameraCurrent.points)
+      : [];
+  drawTool =
+    JSON.parse(props.CameraCurrent.points).length > 4
+      ? new PolygonDrawTool(context, canvas, list, true)
+      : (drawTool = new RectDrawTool(context, canvas, list, true));
+  drawTool.start();
 }
 
 function selectPersonCropTool() {
@@ -112,37 +121,16 @@ const props = defineProps({
   },
 });
 
-const imageUrl = ref("");
-
-const updateImageUrl = () => {
-  imageUrl.value = `${props.CameraCurrent.box.link}?url=${props.CameraCurrent.url}`;
-};
-
-// Watch for changes to CameraCurrent prop
-watch(
-  () => props.CameraCurrent,
-  () => {
-    updateImageUrl();
-  },
-  { immediate: true } // Ensure it runs immediately on first render
-);
-
-// Initial update
-updateImageUrl();
-
 function mouseDown(e: MouseEvent) {
   let client = canvas.getBoundingClientRect();
   let x = e.clientX - client.left;
   let y = e.clientY - client.top;
 
   if (e.button == 0) {
-    // left click
     if (drawTool) {
-      // console.log(x,y);
       drawTool.push(x, y);
     }
   } else if (e.button == 2) {
-    // right click
     console.log("right click");
     if (drawTool) {
       drawTool.pop();

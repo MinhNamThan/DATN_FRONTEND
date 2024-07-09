@@ -62,6 +62,7 @@
     <a-pagination
       v-model:current="current"
       :total="notificationStore.total"
+      :page-size=6
       show-less-items
     />
   </div>

@@ -1,7 +1,7 @@
 <template>
   <div class="camera">
     <div>
-      <a-page-header @back="() => null">
+      <a-page-header @back="backList">
         <template #title>
           <h2>
             {{
@@ -362,6 +362,12 @@ async function getCam(camera: Camera) {
   await axios.get(camera.box.link + "stop_stream?urllink=" + camera.url);
   CameraCurrent.value = camera;
 }
+
+function backList() {
+  CameraCurrent.value = {};
+  cameraStore.fetchCameraList();
+}
+
 function onUpdatePointsSuccess() {
   if(CameraCurrent.value && 'id' in CameraCurrent.value){
     reloadTimestamp[CameraCurrent.value.id as number] = Date.now();

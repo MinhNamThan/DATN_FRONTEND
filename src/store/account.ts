@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import http from "./http";
 import { Response } from "@/types";
-// import jwtDecode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
 export interface Profile {
   account: Account;
@@ -9,15 +9,10 @@ export interface Profile {
   role: string;
 }
 export interface Account {
-  fullName: string;
-  email: string;
-  phoneNumber: string;
-  type: string;
-  id: number;
-  data: any;
-  createdAt: string;
-  updatedAt: string;
-  disabled: boolean;
+  exp: string;
+  sub: string;
+  user_id: number;
+  user_name: string;
 }
 
 export type TokenResult = {
@@ -66,7 +61,8 @@ export const useAccountStore = defineStore("account", {
             console.log(response.data);
             this.logged = true;
             const token = response.data.access_token;
-            // const decoded = jwtDecode(token) as { exp: number };
+            const decoded = jwtDecode(token) as Account;
+            this.account = decoded;
             // localStorage.setItem("account", JSON.stringify(decoded));
             // localStorage.setItem("refreshToken", response.data.refreshToken);
             http.setAuthorization(token);
@@ -180,53 +176,5 @@ export const useAccountStore = defineStore("account", {
           }
         });
     },
-    // async updateProfile(account: Account) {
-    //   return http
-    //     .request<Account, Response<Account>>("/profile", "put_json", account)
-    //     .then((response) => {
-    //       if (response.code === 200) {
-    //         this.account = response.data;
-    //         return response.data;
-    //       }
-    //       return Promise.reject(response);
-    //     });
-    // },
-    // setLogged(logged: boolean) {
-    //   this.logged = logged;
-    // },
-    // async changePassword(oldPassword: string, newPassword: string) {
-    //   return http
-    //     .request<any, Response<any>>("/change-password", "post_json", {
-    //       oldPassword,
-    //       newPassword,
-    //     })
-    //     .then((response) => {
-    //       if (response.code === 200) {
-    //         return response.data;
-    //       }
-    //       return Promise.reject(response);
-    //     });
-    // },
-    // async refreshToken() {
-    //   return http
-    //     .request<TokenResult, Response<TokenResult>>(
-    //       "/refresh-token",
-    //       "post_json",
-    //       {
-    //         refreshToken: localStorage.getItem("refreshToken"),
-    //       }
-    //     )
-    //     .then(async (response) => {
-    //       if (response.code === 200) {
-    //         const token = response.data.token;
-    //         const decoded = jwtDecode(token) as { exp: number };
-    //         localStorage.setItem("account", JSON.stringify(decoded));
-    //         localStorage.setItem("refreshToken", response.data.refreshToken);
-    //         http.setAuthorization(token);
-    //         return response.data;
-    //       }
-    //       return Promise.reject(response);
-    //     });
-    // },
   },
 });

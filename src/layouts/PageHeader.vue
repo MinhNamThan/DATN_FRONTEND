@@ -56,7 +56,8 @@
               </div>
             </div>
           </template>
-          <span class="name-header">Than Minh Nam</span>
+          <span class="name-header" v-if="accountStore.account">{{ accountStore.account.user_name }}</span>
+          <span class="name-header" v-else>Than Minh Nam</span>
         </a-dropdown>
       </span>
     </div>
@@ -93,7 +94,7 @@ async function updateNumberUnseen() {
 updateNumberUnseen();
 
 function setupWebSocket() {
-  const ws = new WebSocket("ws://localhost:8000/ws/notifications");
+  const ws = new WebSocket(process.env.VUE_APP_SOCKET_URL);
   ws.onopen = () => {
     console.log("WebSocket connection opened.");
   };
