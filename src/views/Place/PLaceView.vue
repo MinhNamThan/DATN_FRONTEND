@@ -1,11 +1,11 @@
 <template>
   <div class="place">
-    <div class="mb-1 d-flex justify-content-between">
+    <div class="mb-4 d-flex justify-content-between">
       <h1 class="float-left">Thiết lập địa điểm</h1>
       <a-button type="primary" @click="showModalAdd" size="large"> Thêm địa điểm </a-button>
     </div>
 
-    <a-row :gutter="8">
+    <a-row :gutter="[8, 36]">
       <a-col
         v-for="place in placeStore.placeList"
         :key="place.id"
